@@ -10,7 +10,8 @@
 //! ```no_run
 //! # use ico_builder::IcoBuilder;
 //! IcoBuilder::default()
-//!     .source_files(&["app-icon-32x32.png", "app-icon-256x256.png"])
+//!     .add_source_file("app-icon-32x32.png")
+//!     .add_source_file("app-icon-256x256.png")
 //!     .build_file("app-icon.ico");
 //! ```
 //!
@@ -22,7 +23,7 @@
 //! # use ico_builder::IcoBuilder;
 //! IcoBuilder::default()
 //!     .sizes(&[16, 32])
-//!     .source_files(&["app-icon-32x32.png"])
+//!     .add_source_file("app-icon-32x32.png")
 //!     .build_file("app-icon.ico");
 //! ```
 
@@ -67,9 +68,9 @@ impl IcoBuilder {
         self
     }
 
-    /// Adds sources files. These files can be PNG, BMP or any other format supported by the
+    /// Adds a source file. These file can be PNG, BMP or any other format supported by the
     /// [`image`] crate.
-    /// The source icons are assumed to be squares.
+    /// The icons are assumed to be a square.
     ///
     /// Note that you'll have to enable the necessary features on the [`image`] crate if you want
     /// to use formats other than PNG or BMP:
@@ -79,6 +80,12 @@ impl IcoBuilder {
     /// [dependencies]
     /// ico-builder = { version = "...", features = ["image/jpeg"] }
     /// ```
+    pub fn add_source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
+        self.source_files.push(source_file.as_ref().to_owned());
+        self
+    }
+
+    /// Adds sources files. See: [`IcoBuilder::add_source_file`].
     pub fn add_source_files(
         &mut self,
         source_files: impl IntoIterator<Item = impl AsRef<Path>>,
@@ -91,12 +98,6 @@ impl IcoBuilder {
     /// Customizes the filter type used when downscaling the images. Defaults to [`FilterType::Lanczos3`].
     pub fn filter_type(&mut self, filter_type: FilterType) -> &mut IcoBuilder {
         self.filter_type = filter_type;
-        self
-    }
-
-    /// Adds a source file. See: [`IcoBuilder::add_source_files`].
-    pub fn add_source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
-        self.source_files.push(source_file.as_ref().to_owned());
         self
     }
 
