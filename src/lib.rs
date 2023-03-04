@@ -1,19 +1,29 @@
 //! A crate for creating multi-size ICO files from separate images.
 //! The images are automatically resized to the specified sizes.
 //!
-//! ## Example
+//! ## Examples
+//! ### Basic
 //! In this example, the 16px, 24px, and 32px versions of this icon will
 //! be resized versions of `app-icon-32x32.png` while the 48px and 256px
 //! versions will be resized from `app-icon-256x256.png`.
 //!
 //! ```no_run
-//! use ico_builder::{build_ico_file, IconSizes};
+//! # use ico_builder::IcoBuilder;
+//! IcoBuilder::default()
+//!     .source_files(&["app-icon-32x32.png", "app-icon-256x256.png"])
+//!     .build_file("app-icon.ico");
+//! ```
 //!
-//! build_ico_file(
-//!     "app-icon.ico",
-//!     &["app-icon-32x32.png", "app-icon-256x256.png"],
-//!     IconSizes::MINIMAL,
-//! );
+//! ### Custom Icon Sizes
+//! If you want more fine grained control over which icon sizes are included,
+//! you can specify a custom list of icon sizes.
+//!
+//! ```no_run
+//! # use ico_builder::IcoBuilder;
+//! IcoBuilder::default()
+//!     .sizes(&[16, 32])
+//!     .source_files(&["app-icon-32x32.png"])
+//!     .build_file("app-icon.ico");
 //! ```
 
 use image::codecs::ico::{IcoEncoder, IcoFrame};
@@ -22,6 +32,7 @@ use image::imageops::{resize, FilterType};
 use image::io::Reader as ImageReader;
 use image::{ColorType, DynamicImage, ImageEncoder};
 use std::borrow::Cow;
+use std::ffi::OsStr;
 use std::fs::OpenOptions;
 use std::io::Cursor;
 use std::path::{Path, PathBuf};
@@ -30,59 +41,79 @@ use thiserror::Error;
 
 /// Builds an ICO file from individual files.
 /// For each size, the closest source image is scaled down to the appropriate size.
-/// The source icons are assumed to be squares.
-///
-/// Use [`cargo::build_ico_file`] if you want to use this in the context of `build.rs`.
-///
-/// ## Examples
-/// In this example, the 16px, 24px, and 32px versions of this icon will
-/// be resized versions of `app-icon-32x32.png` while the 48px and 256px
-/// versions will be resized from `app-icon-256x256.png`.
-///
-/// ```no_run
-/// use ico_builder::{build_ico_file, IconSizes};
-///
-/// build_ico_file(
-///     "app-icon.ico",
-///     &["app-icon-32x32.png", "app-icon-256x256.png"],
-///     IconSizes::MINIMAL,
-/// );
-/// ```
-///
-/// ### Custom Icon Sizes
-/// If you want more fine grained control over which icon sizes are included,
-/// you can specify a custom list of icon sizes.
-///
-/// ```no_run
-/// use ico_builder::{build_ico_file, IconSizes};
-///
-/// build_ico_file(
-///     "app-icon.ico",
-///     &["app-icon-32x32.png"],
-///     &[16, 32],
-/// );
-/// ```
-pub fn build_ico_file<'a>(
-    output_file_path: impl AsRef<Path>,
-    icon_sources: impl IntoIterator<Item = impl AsRef<Path>>,
-    sizes: impl Into<IconSizes<'a>>,
-) -> Result<()> {
-    let icons = decode_icons(icon_sources)?;
+#[derive(Debug, Default)]
+pub struct IcoBuilder {
+    sizes: IconSizes,
+    source_files: Vec<PathBuf>,
+}
 
-    let sizes = sizes.into();
-    let sizes = sizes.0.iter().copied();
-    let frames: Vec<_> = sizes
-        .map(|size| create_ico_frame(&icons, size))
-        .collect::<std::result::Result<_, _>>()?;
+impl IcoBuilder {
+    /// Customizes the sizes included in the ICO file. Defaults to [`IconSizes::MINIMAL`].
+    pub fn sizes(&mut self, sizes: impl Into<IconSizes>) -> &mut IcoBuilder {
+        self.sizes = sizes.into();
+        self
+    }
 
-    let file = OpenOptions::new()
-        .create(true)
-        .truncate(true)
-        .write(true)
-        .open(&output_file_path)?;
-    IcoEncoder::new(file).encode_images(&frames)?;
+    /// Adds sources files. These files can be PNG, BMP or any other format supported by the
+    /// [`image`] crate.
+    /// The source icons are assumed to be squares.
+    ///
+    /// Note that you'll have to enable the necessary features on the [`image`] crate if you want
+    /// to use formats other than PNG or BMP:
+    /// ```toml
+    /// # ...
+    ///
+    /// [dependencies]
+    /// ico-builder = { version = "...", features = ["image/jpeg"] }
+    /// ```
+    pub fn source_files(
+        &mut self,
+        source_files: impl IntoIterator<Item = impl AsRef<Path>>,
+    ) -> &mut IcoBuilder {
+        self.source_files
+            .extend(source_files.into_iter().map(|f| f.as_ref().to_owned()));
+        self
+    }
 
-    Ok(())
+    /// Adds a source file. See: [`IcoBuilder::source_files`].
+    pub fn source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
+        self.source_files.push(source_file.as_ref().to_owned());
+        self
+    }
+
+    /// Builds the ICO file and writes it to the specified `output_file_path`.
+    pub fn build_file(&self, output_file_path: impl AsRef<Path>) -> Result<()> {
+        let icons = decode_icons(&self.source_files)?;
+
+        let frames: Vec<_> = self
+            .sizes
+            .0
+            .iter()
+            .copied()
+            .map(|size| create_ico_frame(&icons, size))
+            .collect::<std::result::Result<_, _>>()?;
+
+        let file = OpenOptions::new()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(&output_file_path)?;
+        IcoEncoder::new(file).encode_images(&frames)?;
+
+        Ok(())
+    }
+
+    /// Builds the ICO file and writes it to `OUT_DIR`.
+    /// Tells Cargo to re-build when one of the specified sources changes.
+    pub fn build_file_cargo(&self, file_name: impl AsRef<OsStr>) -> Result<PathBuf> {
+        let out_dir = env::var("OUT_DIR").unwrap();
+        let mut output_path = PathBuf::from(out_dir);
+        output_path.push(file_name.as_ref());
+
+        self.build_file(&output_path)?;
+
+        Ok(output_path)
+    }
 }
 
 #[derive(Debug, Error)]
@@ -99,16 +130,27 @@ pub enum Error {
 pub type Result<T> = std::result::Result<T, Error>;
 
 /// A list of icon sizes.
-pub struct IconSizes<'a>(Cow<'a, [u32]>);
+#[derive(Debug)]
+pub struct IconSizes(Cow<'static, [u32]>);
 
-impl<'a> IconSizes<'a> {
-    /// The [bare minimum] recommended icon sizes.
+impl IconSizes {
+    /// The [bare minimum] recommended icon sizes: 16x16, 24x24, 32x32, 48x48, and 256x256.
     ///
     /// [bare minimum]: https://learn.microsoft.com/en-us/windows/apps/design/style/iconography/app-icon-construction#icon-scaling
-    pub const MINIMAL: Self = Self(Cow::Borrowed(&[16, 24, 32, 48, 256]));
+    pub const MINIMAL: Self = Self::new(&[16, 24, 32, 48, 256]);
+
+    pub const fn new(sizes: &'static [u32]) -> IconSizes {
+        Self(Cow::Borrowed(sizes))
+    }
 }
 
-impl<'a, I> From<I> for IconSizes<'a>
+impl Default for IconSizes {
+    fn default() -> Self {
+        IconSizes::MINIMAL
+    }
+}
+
+impl<'a, I> From<I> for IconSizes
 where
     I: IntoIterator<Item = &'a u32>,
 {
@@ -146,33 +188,4 @@ fn encode_ico_frame(buf: &[u8], size: u32) -> Result<IcoFrame<'static>> {
     let mut encoded = Vec::new();
     PngEncoder::new(Cursor::new(&mut encoded)).write_image(buf, size, size, color_type)?;
     Ok(IcoFrame::with_encoded(encoded, size, size, color_type)?)
-}
-
-/// Functions that can be used in a `build.rs`.
-pub mod cargo {
-    use std::ffi::OsStr;
-
-    use super::*;
-
-    /// Builds a windows ICO file. This function is mostly the same as [`super::build_ico_file`]
-    /// but this function is intended to be used in the context of `build.rs`.
-    pub fn build_ico_file<'a>(
-        file_name: impl AsRef<OsStr>,
-        icon_sources: impl IntoIterator<Item = impl AsRef<Path>>,
-        sizes: impl Into<IconSizes<'a>>,
-    ) -> Result<PathBuf> {
-        let out_dir = env::var("OUT_DIR").unwrap();
-        let mut output_path = PathBuf::from(out_dir);
-        output_path.push(file_name.as_ref());
-
-        super::build_ico_file(
-            &output_path,
-            icon_sources
-                .into_iter()
-                .inspect(|path| println!("cargo:rerun-if-changed={}", path.as_ref().display())),
-            sizes,
-        )?;
-
-        Ok(output_path)
-    }
 }
