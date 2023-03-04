@@ -28,7 +28,7 @@
 
 use image::codecs::ico::{IcoEncoder, IcoFrame};
 use image::codecs::png::PngEncoder;
-use image::imageops::{resize, FilterType};
+use image::imageops::resize;
 use image::io::Reader as ImageReader;
 use image::{ColorType, DynamicImage, ImageEncoder};
 use std::borrow::Cow;
@@ -39,12 +39,25 @@ use std::path::{Path, PathBuf};
 use std::{env, io};
 use thiserror::Error;
 
+pub use image::imageops::FilterType;
+
 /// Builds an ICO file from individual files.
 /// For each size, the closest source image is scaled down to the appropriate size.
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct IcoBuilder {
     sizes: IconSizes,
     source_files: Vec<PathBuf>,
+    filter_type: FilterType,
+}
+
+impl Default for IcoBuilder {
+    fn default() -> Self {
+        IcoBuilder {
+            sizes: Default::default(),
+            source_files: Default::default(),
+            filter_type: FilterType::Lanczos3,
+        }
+    }
 }
 
 impl IcoBuilder {
@@ -75,6 +88,12 @@ impl IcoBuilder {
         self
     }
 
+    /// Changes the filter type used when downscaling the images. Defaults to [`FilterType::Lanczos3`].
+    pub fn filter_type(&mut self, filter_type: FilterType) -> &mut IcoBuilder {
+        self.filter_type = filter_type;
+        self
+    }
+
     /// Adds a source file. See: [`IcoBuilder::source_files`].
     pub fn source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
         self.source_files.push(source_file.as_ref().to_owned());
@@ -90,7 +109,7 @@ impl IcoBuilder {
             .0
             .iter()
             .copied()
-            .map(|size| create_ico_frame(&icons, size))
+            .map(|size| create_ico_frame(&icons, size, self.filter_type))
             .collect::<std::result::Result<_, _>>()?;
 
         let file = OpenOptions::new()
@@ -177,9 +196,13 @@ fn find_next_bigger_icon(icons: &[DynamicImage], size: u32) -> Result<&DynamicIm
         .ok_or(Error::MissingIconSize(size))
 }
 
-fn create_ico_frame(icons: &[DynamicImage], size: u32) -> Result<IcoFrame<'static>> {
+fn create_ico_frame(
+    icons: &[DynamicImage],
+    size: u32,
+    filter_type: FilterType,
+) -> Result<IcoFrame<'static>> {
     let next_bigger_icon = find_next_bigger_icon(icons, size)?;
-    let resized = resize(next_bigger_icon, size, size, FilterType::Lanczos3);
+    let resized = resize(next_bigger_icon, size, size, filter_type);
     encode_ico_frame(resized.as_raw(), size)
 }
 
