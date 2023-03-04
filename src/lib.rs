@@ -88,7 +88,7 @@ impl IcoBuilder {
         self
     }
 
-    /// Changes the filter type used when downscaling the images. Defaults to [`FilterType::Lanczos3`].
+    /// Customizes the filter type used when downscaling the images. Defaults to [`FilterType::Lanczos3`].
     pub fn filter_type(&mut self, filter_type: FilterType) -> &mut IcoBuilder {
         self.filter_type = filter_type;
         self
