@@ -78,7 +78,7 @@ impl IcoBuilder {
     /// # ...
     ///
     /// [dependencies]
-    /// ico-builder = { version = "...", features = ["image/jpeg"] }
+    /// ico-builder = { version = "...", features = ["jpeg"] }
     /// ```
     pub fn add_source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
         self.source_files.push(source_file.as_ref().to_owned());

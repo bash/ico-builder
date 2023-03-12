@@ -7,3 +7,10 @@ license = "MIT OR Apache-2.0"
 [dependencies]
 image = { version = "0.24.5", default-features = false, features = ["ico"] }
 thiserror = "1.0.38"
+
+[features]
+# Re-exports of image features. This list is not exhaustive,
+# but PRs are welcome if an important feature is missing :)
+jpeg = ["image/jpeg"]
+gif = ["image/gif"]
+tiff = ["image/tiff"]
