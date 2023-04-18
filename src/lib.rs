@@ -38,7 +38,7 @@ use std::fs::OpenOptions;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::{env, io};
+use std::{env, io, iter};
 use thiserror::Error;
 
 pub use image::imageops::FilterType;
@@ -82,8 +82,7 @@ impl IcoBuilder {
     /// ico-builder = { version = "...", features = ["jpeg"] }
     /// ```
     pub fn add_source_file(&mut self, source_file: impl AsRef<Path>) -> &mut IcoBuilder {
-        self.source_files.push(source_file.as_ref().to_owned());
-        self
+        self.add_source_files(iter::once(source_file))
     }
 
     /// Adds sources files. See: [`IcoBuilder::add_source_file`].
