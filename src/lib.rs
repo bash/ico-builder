@@ -150,6 +150,12 @@ pub enum Error {
     Io(#[from] io::Error),
     #[error("No icon in the sources is >= {0}px")]
     MissingIconSize(u32),
+    #[error("Image {path} ({width} × {height}) is not a square")]
+    NonSquareImage {
+        path: PathBuf,
+        width: u32,
+        height: u32,
+    },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -202,7 +208,21 @@ fn decode_icons(
 }
 
 fn decode_icon(path: &Path) -> Result<DynamicImage> {
-    Ok(ImageReader::open(path)?.decode()?)
+    let image = ImageReader::open(path)?.decode()?;
+
+    if is_square(&image) {
+        Ok(image)
+    } else {
+        Err(Error::NonSquareImage {
+            path: path.to_owned(),
+            width: image.width(),
+            height: image.height(),
+        })
+    }
+}
+
+fn is_square(image: &DynamicImage) -> bool {
+    image.width() == image.height()
 }
 
 fn find_next_bigger_icon(icons: &[DynamicImage], size: u32) -> Result<&DynamicImage> {
