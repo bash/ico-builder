@@ -255,9 +255,9 @@ fn create_ico_frame(
     encode_ico_frame(resized.as_raw(), size)
 }
 
-fn encode_ico_frame(buf: &[u8], size: u32) -> Result<IcoFrame<'static>> {
+fn encode_ico_frame(buffer: &[u8], size: u32) -> Result<IcoFrame<'static>> {
     let color_type = ColorType::Rgba8;
     let mut encoded = Vec::new();
-    PngEncoder::new(Cursor::new(&mut encoded)).write_image(buf, size, size, color_type)?;
+    PngEncoder::new(Cursor::new(&mut encoded)).write_image(buffer, size, size, color_type)?;
     Ok(IcoFrame::with_encoded(encoded, size, size, color_type)?)
 }
