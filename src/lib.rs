@@ -240,7 +240,7 @@ fn create_ico_frames(
     sizes
         .iter()
         .copied()
-        .map(|size| create_ico_frame(&icons, size, filter_type))
+        .map(|size| create_ico_frame(icons, size, filter_type))
         .collect()
 }
 
