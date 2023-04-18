@@ -195,9 +195,12 @@ fn decode_icons(
 ) -> Result<Vec<DynamicImage>> {
     icon_sources
         .into_iter()
-        .map(|path| ImageReader::open(path).unwrap().decode())
-        .collect::<std::result::Result<_, _>>()
-        .map_err(Into::into)
+        .map(|path| decode_icon(path.as_ref()))
+        .collect()
+}
+
+fn decode_icon(path: &Path) -> Result<DynamicImage> {
+    Ok(ImageReader::open(path)?.decode()?)
 }
 
 fn find_next_bigger_icon(icons: &[DynamicImage], size: u32) -> Result<&DynamicImage> {
