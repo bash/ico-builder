@@ -122,7 +122,9 @@ impl IcoBuilder {
     /// ## Panics
     /// This function panics if the path of one of the source files is not valid UTF-8.
     pub fn build_file_cargo(&self, file_name: impl AsRef<OsStr>) -> Result<PathBuf> {
-        let out_dir = env::var("OUT_DIR").unwrap();
+        let out_dir = env::var("OUT_DIR").expect(
+            "OUT_DIR environment variable is required.\nHint: This function is intended to be used in Cargo build scripts.",
+        );
         let mut output_path = PathBuf::from(out_dir);
         output_path.push(file_name.as_ref());
 
