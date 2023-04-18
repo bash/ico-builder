@@ -36,6 +36,7 @@ use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
 use std::io::Cursor;
+use std::ops::Deref;
 use std::path::{Path, PathBuf};
 use std::{env, io};
 use thiserror::Error;
@@ -107,7 +108,6 @@ impl IcoBuilder {
 
         let frames: Vec<_> = self
             .sizes
-            .0
             .iter()
             .copied()
             .map(|size| create_ico_frame(&icons, size, self.filter_type))
@@ -185,6 +185,14 @@ where
 {
     fn from(value: I) -> Self {
         IconSizes(value.into_iter().copied().collect::<Vec<_>>().into())
+    }
+}
+
+impl Deref for IconSizes {
+    type Target = [u32];
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
