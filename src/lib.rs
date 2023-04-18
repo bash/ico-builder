@@ -105,13 +105,7 @@ impl IcoBuilder {
     /// Builds the ICO file and writes it to the specified `output_file_path`.
     pub fn build_file(&self, output_file_path: impl AsRef<Path>) -> Result<()> {
         let icons = decode_icons(&self.source_files)?;
-
-        let frames: Vec<_> = self
-            .sizes
-            .iter()
-            .copied()
-            .map(|size| create_ico_frame(&icons, size, self.filter_type))
-            .collect::<std::result::Result<_, _>>()?;
+        let frames = create_ico_frames(&self.sizes, &icons, self.filter_type)?;
 
         let file = OpenOptions::new()
             .create(true)
@@ -212,6 +206,18 @@ fn find_next_bigger_icon(icons: &[DynamicImage], size: u32) -> Result<&DynamicIm
         .filter(|icon| icon.width() >= size)
         .min_by_key(|icon| icon.width())
         .ok_or(Error::MissingIconSize(size))
+}
+
+fn create_ico_frames(
+    sizes: &IconSizes,
+    icons: &[DynamicImage],
+    filter_type: FilterType,
+) -> Result<Vec<IcoFrame<'static>>> {
+    sizes
+        .iter()
+        .copied()
+        .map(|size| create_ico_frame(&icons, size, filter_type))
+        .collect()
 }
 
 fn create_ico_frame(
