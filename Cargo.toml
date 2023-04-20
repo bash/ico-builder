@@ -3,6 +3,8 @@ name = "ico-builder"
 version = "0.1.0"
 edition = "2021"
 license = "MIT OR Apache-2.0"
+description = "Create multi-size ICO files from separate images"
+repository = "https://github.com/bash/ico-builder"
 
 [dependencies]
 image = { version = "0.24.5", default-features = false, features = ["ico"] }
