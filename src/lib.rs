@@ -27,6 +27,10 @@
 //!     .build_file("app-icon.ico");
 //! ```
 
+#[cfg(doctest)]
+#[doc = include_str!("../readme.md")]
+mod test_readme {}
+
 use image::codecs::ico::{IcoEncoder, IcoFrame};
 use image::codecs::png::PngEncoder;
 use image::imageops::resize;

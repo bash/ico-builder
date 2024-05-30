@@ -6,7 +6,7 @@ The images are automatically resized to the specified sizes.
 This example creates an ICO with the [bare minimum] icon sizes: 16x16, 24x24, 32x32, 48x48, 256x256.
 For each size, the closest source file is chosen and resized as needed.
 
-```rust
+```rust,no_run
 use ico_builder::IcoBuilder;
 
 IcoBuilder::default()
