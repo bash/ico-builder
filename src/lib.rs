@@ -38,8 +38,11 @@ use std::fs::OpenOptions;
 use std::io::Cursor;
 use std::ops::Deref;
 use std::path::{Path, PathBuf};
-use std::{env, io, iter};
-use thiserror::Error;
+use std::{env, iter};
+
+mod error;
+pub use error::*;
+pub type Result<T> = std::result::Result<T, Error>;
 
 pub use image::imageops::FilterType;
 
@@ -138,25 +141,6 @@ impl IcoBuilder {
         Ok(output_path)
     }
 }
-
-#[derive(Debug, Error)]
-#[non_exhaustive]
-pub enum Error {
-    #[error(transparent)]
-    Image(#[from] image::ImageError),
-    #[error(transparent)]
-    Io(#[from] io::Error),
-    #[error("No icon in the sources is >= {0}px")]
-    MissingIconSize(u32),
-    #[error("Image {path} ({width} × {height}) is not a square")]
-    NonSquareImage {
-        path: PathBuf,
-        width: u32,
-        height: u32,
-    },
-}
-
-pub type Result<T> = std::result::Result<T, Error>;
 
 /// A list of icon sizes.
 #[derive(Debug)]
