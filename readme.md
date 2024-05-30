@@ -18,7 +18,6 @@ IcoBuilder::default()
 
 [bare minimum]: https://learn.microsoft.com/en-us/windows/apps/design/style/iconography/app-icon-construction#icon-scaling
 
-
 ## [Docs](https://docs.rs/ico-builder)
 
 ## License

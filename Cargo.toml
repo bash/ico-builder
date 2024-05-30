@@ -5,6 +5,9 @@ edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Create multi-size ICO files from separate images"
 repository = "https://github.com/bash/ico-builder"
+readme = "readme.md"
+categories = ["multimedia::images"]
+keywords = ["image", "size", "ico", "resize"]
 
 [dependencies]
 image = { version = "0.25.1", default-features = false, features = ["ico"] }
