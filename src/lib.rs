@@ -31,7 +31,7 @@ use image::codecs::ico::{IcoEncoder, IcoFrame};
 use image::codecs::png::PngEncoder;
 use image::imageops::resize;
 use image::io::Reader as ImageReader;
-use image::{ColorType, DynamicImage, ImageEncoder};
+use image::{DynamicImage, ExtendedColorType, ImageEncoder};
 use std::borrow::Cow;
 use std::ffi::OsStr;
 use std::fs::OpenOptions;
@@ -254,7 +254,7 @@ fn create_ico_frame(
 }
 
 fn encode_ico_frame(buffer: &[u8], size: u32) -> Result<IcoFrame<'static>> {
-    let color_type = ColorType::Rgba8;
+    let color_type = ExtendedColorType::Rgba8;
     let mut encoded = Vec::new();
     PngEncoder::new(Cursor::new(&mut encoded)).write_image(buffer, size, size, color_type)?;
     Ok(IcoFrame::with_encoded(encoded, size, size, color_type)?)
